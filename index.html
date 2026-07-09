@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐱 Cat Oracle — Le chat choisit le vainqueur</title>
+<style>
+  :root{
+    --glass: rgba(15,15,20,.55);
+    --glass-border: rgba(255,255,255,.14);
+    --accent:#f5c451;
+    --text:#f4f2ee;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#000;color:var(--text)}
+
+  /* ===== VIDEO FULLSCREEN ===== */
+  #stage{position:fixed;inset:0}
+  #bgvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .5s ease}
+  #bgvideo.fading{opacity:0}
+  #veil{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.35));pointer-events:none}
+
+  /* ===== FLAG OVERLAYS (sur les feuilles blanches) ===== */
+  /* en rendu serveur, les drapeaux sont dans la vidéo : on masque les overlays */
+  body.server-mode .paper-flag{display:none}
+  /* La feuille = quadrilatère projeté en perspective (homographie) sur la feuille réelle de la vidéo */
+  .paper-flag{
+    position:absolute;left:0;top:0;
+    transform-origin:0 0;
+    pointer-events:none;
+  }
+  /* drapeau OPAQUE : il recouvre toute la feuille (le blanc disparaît), effet tissu posé */
+  .paper-flag .print{
+    position:absolute;inset:0;
+    overflow:hidden;border-radius:1px;
+    opacity:1;
+    /* calé sur le rendu serveur : scène plus sombre et chaude que le PNG brut */
+    filter:url(#paperWarp) brightness(.86) saturate(.93) sepia(.10) contrast(.98) blur(.25px);
+    box-shadow:0 1px 5px rgba(0,0,0,.28); /* fine ombre portée : épaisseur du tissu */
+  }
+  .paper-flag .print img{width:100%;height:100%;object-fit:cover;display:block}
+  /* plis de tissu + lumière directionnelle (même effet que le rendu serveur) */
+  .paper-flag .print::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+    background:
+      linear-gradient(102deg,
+        rgba(255,255,255,.13) 0%, rgba(0,0,0,.09) 16%,
+        rgba(255,255,255,.10) 33%, rgba(0,0,0,.07) 50%,
+        rgba(255,255,255,.11) 66%, rgba(0,0,0,.10) 84%,
+        rgba(255,255,255,.07) 100%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.13));
+  }
+  /* grain tissu très léger */
+  .paper-flag .print::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  .paper-flag.winner .print{filter:url(#paperWarp) saturate(1.02) contrast(1) blur(.2px)}
+  /* feuille du milieu : fanion DRAW opaque */
+  .print.draw{
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+    background:linear-gradient(160deg,#f6f3ec,#e8e3d6);
+    color:#3d3a34;font-weight:900;letter-spacing:.35em;text-align:center;
+    font-family:Georgia,'Times New Roman',serif;
+  }
+  .print.draw .dw{font-size:44px;line-height:1}
+  .print.draw .dsub{font-size:14px;letter-spacing:.5em;opacity:.65;font-weight:700}
+  /* calibration : poignées de coins */
+  body.calibrating .paper-flag{outline:2px dashed rgba(245,196,81,.95);background:rgba(245,196,81,.10)}
+  .cal-handle{
+    position:fixed;z-index:36;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);border:2px solid rgba(0,0,0,.75);
+    box-shadow:0 0 10px rgba(0,0,0,.6);transform:translate(-50%,-50%);
+    cursor:grab;touch-action:none;
+  }
+  .cal-handle:active{cursor:grabbing}
+  #cal-toast{
+    position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:36;
+    padding:9px 20px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);
+    border:1px solid var(--accent);font-size:12px;font-weight:600;display:none;text-align:center;
+  }
+  body.calibrating #cal-toast{display:block}
+
+  /* ===== TOP BAR ===== */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;
+    background:linear-gradient(rgba(0,0,0,.55),transparent);
+    pointer-events:none;
+  }
+  header h1{font-size:19px;font-weight:800;letter-spacing:.5px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  header h1 span{color:var(--accent)}
+  .top-actions{display:flex;gap:10px;pointer-events:auto}
+  .icon-btn{
+    width:42px;height:42px;border-radius:12px;border:1px solid var(--glass-border);
+    background:var(--glass);backdrop-filter:blur(14px);color:var(--text);
+    font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .15s, background .2s;
+  }
+  .icon-btn:hover{transform:scale(1.08);background:rgba(40,40,50,.7)}
+
+  /* ===== CONTROL DOCK ===== */
+  #dock{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;
+    display:flex;flex-direction:column;gap:12px;align-items:center;
+    padding:16px 20px;border-radius:22px;
+    background:var(--glass);backdrop-filter:blur(18px);
+    border:1px solid var(--glass-border);
+    box-shadow:0 12px 40px rgba(0,0,0,.45);
+    max-width:min(860px,94vw);
+    transition:transform .35s ease,opacity .35s ease;
+  }
+  #dock.hidden-dock{transform:translateX(-50%) translateY(130%);opacity:0;pointer-events:none}
+  .dock-row{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;justify-content:center}
+
+  .team-slot{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    min-width:120px;padding:10px 12px;border-radius:14px;cursor:pointer;
+    border:1px solid var(--glass-border);background:rgba(255,255,255,.05);
+    transition:background .2s,transform .15s;
+  }
+  .team-slot:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
+  .team-slot .slot-pos{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;opacity:.65;font-weight:700}
+  .team-slot .slot-flag{width:64px;height:42px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+  .team-slot .slot-flag img{width:100%;height:100%;object-fit:cover}
+  .team-slot .slot-name{font-size:12px;font-weight:600;max-width:130px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .bowl-group{display:flex;gap:6px;background:rgba(255,255,255,.06);padding:6px;border-radius:14px;border:1px solid var(--glass-border)}
+  .bowl-btn{
+    padding:10px 18px;border-radius:10px;border:none;cursor:pointer;
+    background:transparent;color:var(--text);font-size:13px;font-weight:700;
+    display:flex;flex-direction:column;align-items:center;gap:2px;transition:background .2s;
+  }
+  .bowl-btn small{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+  .bowl-btn:hover{background:rgba(255,255,255,.1)}
+  .bowl-btn.active{background:var(--accent);color:#1b1405}
+  .bowl-btn.active small{opacity:.75}
+
+  .play-btn{
+    padding:12px 26px;border-radius:14px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,#f5c451,#e89b2e);color:#221703;
+    font-size:14px;font-weight:800;letter-spacing:.4px;
+    box-shadow:0 6px 22px rgba(232,155,46,.4);
+    transition:transform .15s,box-shadow .2s;
+  }
+  .play-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(232,155,46,.55)}
+
+  /* ===== RESULT BANNER ===== */
+  #banner{
+    position:fixed;top:16%;left:50%;transform:translate(-50%,-30px);z-index:25;
+    padding:16px 34px;border-radius:18px;text-align:center;
+    background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--accent);
+    opacity:0;pointer-events:none;transition:opacity .5s,transform .5s;
+  }
+  #banner.show{opacity:1;transform:translate(-50%,0)}
+  #banner .b-title{font-size:12px;text-transform:uppercase;letter-spacing:2.5px;color:var(--accent);font-weight:700;margin-bottom:4px}
+  #banner .b-team{font-size:24px;font-weight:800}
+
+  /* ===== MODAL PICKER ===== */
+  #modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:40;display:none;align-items:center;justify-content:center}
+  #modal-backdrop.open{display:flex}
+  #modal{
+    width:min(680px,92vw);max-height:82vh;display:flex;flex-direction:column;
+    background:rgba(22,22,30,.92);border:1px solid var(--glass-border);border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;
+    animation:pop .25s ease;
+  }
+  @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+  #modal .m-head{padding:18px 22px 10px;display:flex;justify-content:space-between;align-items:center}
+  #modal .m-head h2{font-size:16px;font-weight:800}
+  #modal .m-head h2 em{color:var(--accent);font-style:normal}
+  .m-tabs{display:flex;gap:8px;padding:0 22px 10px}
+  .m-tab{padding:8px 20px;border-radius:10px;border:1px solid var(--glass-border);background:transparent;color:var(--text);font-weight:700;font-size:13px;cursor:pointer}
+  .m-tab.active{background:var(--accent);color:#1b1405;border-color:var(--accent)}
+  .m-continents{display:flex;gap:6px;padding:0 22px 12px;flex-wrap:wrap}
+  .cont-chip{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--glass-border);background:rgba(255,255,255,.05);color:var(--text)}
+  .cont-chip.active{background:rgba(245,196,81,.2);border-color:var(--accent);color:var(--accent)}
+  #m-search{margin:0 22px 12px;padding:10px 16px;border-radius:12px;border:1px solid var(--glass-border);background:rgba(255,255,255,.07);color:var(--text);font-size:14px;outline:none}
+  #m-search::placeholder{color:rgba(255,255,255,.4)}
+  #m-grid{overflow-y:auto;padding:4px 22px 22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .team-card{
+    display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 8px;
+    border-radius:14px;cursor:pointer;border:1px solid transparent;
+    background:rgba(255,255,255,.05);transition:background .15s,border-color .15s,transform .12s;
+  }
+  .team-card:hover{background:rgba(255,255,255,.12);border-color:var(--accent);transform:translateY(-2px)}
+  .team-card .tc-flag{width:72px;height:48px;border-radius:6px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.45)}
+  .team-card .tc-flag img{width:100%;height:100%;object-fit:cover;display:block}
+  .team-card .tc-name{font-size:12px;font-weight:600;text-align:center;line-height:1.25}
+  .m-close{background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;opacity:.7}
+  .m-close:hover{opacity:1}
+
+  /* ===== LOADER ===== */
+  #loader{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(3px)}
+  #loader.show{display:flex}
+  .spinner{width:54px;height:54px;border-radius:50%;border:4px solid rgba(255,255,255,.2);border-top-color:var(--accent);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  #hint{position:fixed;bottom:4px;left:10px;z-index:20;font-size:10px;opacity:.45;pointer-events:none}
+  @media (max-width:640px){
+    .team-slot{min-width:92px}
+    .team-slot .slot-flag{width:48px;height:32px}
+    header h1{font-size:15px}
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="bgvideo" autoplay muted playsinline preload="auto"></video>
+  <div id="veil"></div>
+  <!-- Overlays imprimés sur les feuilles blanches de la vidéo -->
+  <div class="paper-flag" id="pf-left"  data-pos="left"></div>
+  <div class="paper-flag" id="pf-middle" data-pos="middle">
+    <div class="print draw"><span class="dw">DRAW</span></div>
+  </div>
+  <div class="paper-flag" id="pf-right" data-pos="right"></div>
+</div>
+
+<header>
+  <h1>🐱 Cat <span>Oracle</span> — le chat choisit le vainqueur</h1>
+  <div class="top-actions">
+    <button class="icon-btn" id="btn-dock" title="Afficher/masquer les contrôles">☰</button>
+    <button class="icon-btn" id="btn-fs" title="Plein écran">⛶</button>
+  </div>
+</header>
+
+<div id="banner">
+  <div class="b-title" id="b-title">Le chat a choisi</div>
+  <div class="b-team" id="b-team"></div>
+</div>
+
+<div id="dock">
+  <div class="dock-row" id="slots">
+    <div class="team-slot" data-pos="left">
+      <span class="slot-pos">🥣 Équipe 1 — Gauche</span>
+      <div class="slot-flag" id="sf-left">➕</div>
+      <span class="slot-name" id="sn-left">Choisir…</span>
+    </div>
+    <div class="team-slot" style="cursor:default;opacity:.75" title="Le bol du milieu = match nul">
+      <span class="slot-pos">🥣 Milieu</span>
+      <div class="slot-flag" style="font-size:13px;font-weight:800;color:#3d3a34;background:#f2eee4">DRAW</div>
+      <span class="slot-name">Draw</span>
+    </div>
+    <div class="team-slot" data-pos="right">
+      <span class="slot-pos">🥣 Équipe 2 — Droite</span>
+      <div class="slot-flag" id="sf-right">➕</div>
+      <span class="slot-name" id="sn-right">Choisir…</span>
+    </div>
+  </div>
+  <div class="dock-row">
+    <div class="bowl-group">
+      <button class="bowl-btn" data-bowl="left">⬅️ Bol gauche<small>victoire 1</small></button>
+      <button class="bowl-btn active" data-bowl="middle">🥣 Bol milieu<small>match nul</small></button>
+      <button class="bowl-btn" data-bowl="right">Bol droit ➡️<small>victoire 2</small></button>
+    </div>
+    <button class="play-btn" id="btn-play">▶ Rejouer la vidéo</button>
+    <button class="play-btn" id="btn-dl" style="background:linear-gradient(135deg,#9be09b,#3f9d3f);box-shadow:0 6px 22px rgba(63,157,63,.4)" title="Télécharger la vidéo affichée">⬇ Télécharger</button>
+    <button class="play-btn" id="btn-server" style="display:none" title="Rendu serveur (toujours actif)">🎬 Rendu serveur : ON</button>
+  </div>
+</div>
+
+<div id="loader"><div class="spinner"></div></div>
+<div id="backend-wait" style="display:none;position:fixed;top:56%;left:50%;transform:translateX(-50%);z-index:31;padding:10px 24px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:13px;font-weight:600">⏳ En attente du backend…</div>
+<div id="cal-toast">🎯 Calibration (vidéo en pause) — glissez les 4 coins de chaque feuille pour les faire coïncider avec la vidéo. Touche <b>C</b> pour terminer. Mémorisé par vidéo.</div>
+<div id="hint">Astuce : touche <b>C</b> = calibrer la position des feuilles sur la vidéo</div>
+
+<!-- filtre de déformation papier (réalisme : le drapeau épouse le grain de la feuille) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="paperWarp">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<!-- MODAL -->
+<div id="modal-backdrop">
+  <div id="modal">
+    <div class="m-head">
+      <h2>Choisir l'équipe — <em id="m-pos-label"></em></h2>
+      <button class="m-close" id="m-close">✕</button>
+    </div>
+    <div class="m-tabs">
+      <button class="m-tab active" data-type="country">🌍 Pays</button>
+      <button class="m-tab" data-type="club">⚽ Clubs</button>
+    </div>
+    <div class="m-continents" id="m-continents"></div>
+    <input id="m-search" placeholder="Rechercher une équipe…">
+    <div id="m-grid"></div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG VIDÉOS =================
+   Remplace ces URLs par tes propres fichiers si besoin
+   (ex: "videos/left.mp4"). Une vidéo par bol.        */
+const VIDEOS = {
+  left:   "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225827_6109b307-f32d-488b-8dac-44f968be8809.mp4",
+  middle: "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_234502_ec20af48-a233-4b1a-aa62-cb1d02538a31.mp4",
+  right:  "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225833_040a9d9e-3249-4544-ade6-51153251cc9d.mp4"
+};
+
+/* Coins des feuilles blanches dans la vidéo (% de l'écran) : TL, TR, BR, BL.
+   Chaque vidéo (bol) a sa propre calibration — touche C pour ajuster, sauvegardé. */
+const DEFAULT_QUADS = {
+  left:  [[4.5,87.5],[21.5,87.2],[20,100],[0.5,100]],
+  middle:[[41,87.2],[59,87.2],[60.5,100],[39.5,100]],
+  right: [[78.5,87.2],[95.5,87.5],[99.5,100],[77,100]]
+};
+
+/* ================= DONNÉES ÉQUIPES ================= */
+const CONTINENTS = ["Tous","Europe","Afrique","Amérique","Asie","Océanie"];
+
+const COUNTRIES = [
+  ["fr","France","Europe"],["de","Allemagne","Europe"],["es","Espagne","Europe"],["it","Italie","Europe"],
+  ["pt","Portugal","Europe"],["gb-eng","Angleterre","Europe"],["nl","Pays-Bas","Europe"],["be","Belgique","Europe"],
+  ["hr","Croatie","Europe"],["pl","Pologne","Europe"],["ch","Suisse","Europe"],["tr","Turquie","Europe"],
+  ["ma","Maroc","Afrique"],["dz","Algérie","Afrique"],["tn","Tunisie","Afrique"],["eg","Égypte","Afrique"],
+  ["sn","Sénégal","Afrique"],["ci","Côte d'Ivoire","Afrique"],["ng","Nigeria","Afrique"],["cm","Cameroun","Afrique"],
+  ["gh","Ghana","Afrique"],["za","Afrique du Sud","Afrique"],["ml","Mali","Afrique"],["bf","Burkina Faso","Afrique"],
+  ["br","Brésil","Amérique"],["ar","Argentine","Amérique"],["uy","Uruguay","Amérique"],["us","États-Unis","Amérique"],
+  ["mx","Mexique","Amérique"],["co","Colombie","Amérique"],["cl","Chili","Amérique"],["ca","Canada","Amérique"],
+  ["pe","Pérou","Amérique"],["ec","Équateur","Amérique"],["py","Paraguay","Amérique"],["ve","Venezuela","Amérique"],
+  ["jp","Japon","Asie"],["kr","Corée du Sud","Asie"],["sa","Arabie Saoudite","Asie"],["qa","Qatar","Asie"],
+  ["ir","Iran","Asie"],["cn","Chine","Asie"],["in","Inde","Asie"],["uz","Ouzbékistan","Asie"],
+  ["jo","Jordanie","Asie"],["iq","Irak","Asie"],["ae","Émirats Arabes Unis","Asie"],["kw","Koweït","Asie"],
+  ["au","Australie","Océanie"],["nz","Nouvelle-Zélande","Océanie"],["fj","Fidji","Océanie"],
+  ["pg","Papouasie-N.-Guinée","Océanie"],["ws","Samoa","Océanie"],["sb","Îles Salomon","Océanie"]
+].map(([code,name,continent])=>({id:"c-"+code,type:"country",name,continent,flag:`https://flagcdn.com/w320/${code}.png`}));
+
+/* Clubs : drapeaux générés en SVG avec les couleurs du club */
+const CLUBS_RAW = [
+  ["Real Madrid","Europe","#FFFFFF","#FEBE10","RMA"],["FC Barcelone","Europe","#004D98","#A50044","BAR"],
+  ["PSG","Europe","#004170","#DA291C","PSG"],["Bayern Munich","Europe","#DC052D","#FFFFFF","FCB"],
+  ["Liverpool","Europe","#C8102E","#F6EB61","LIV"],["Manchester City","Europe","#6CABDD","#FFFFFF","MCI"],
+  ["Juventus","Europe","#000000","#FFFFFF","JUV"],["Inter Milan","Europe","#0068A8","#221F20","INT"],
+  ["AC Milan","Europe","#FB090B","#000000","ACM"],["Arsenal","Europe","#EF0107","#FFFFFF","ARS"],
+  ["Dortmund","Europe","#FDE100","#000000","BVB"],["Ajax","Europe","#D2122E","#FFFFFF","AJA"],
+  ["Al Ahly","Afrique","#E30613","#FFFFFF","AHL"],["Zamalek","Afrique","#FFFFFF","#E30613","ZAM"],
+  ["Wydad AC","Afrique","#E30613","#FFFFFF","WAC"],["Raja CA","Afrique","#00843D","#FFFFFF","RCA"],
+  ["Espérance Tunis","Afrique","#E30613","#FFD200","EST"],["Mamelodi Sundowns","Afrique","#FFD200","#0033A0","MSD"],
+  ["TP Mazembe","Afrique","#000000","#FFFFFF","TPM"],["Kaizer Chiefs","Afrique","#FFB612","#000000","KCH"],
+  ["Boca Juniors","Amérique","#003DA5","#FFD100","BOC"],["River Plate","Amérique","#FFFFFF","#E4002B","RIV"],
+  ["Flamengo","Amérique","#C52613","#000000","FLA"],["Palmeiras","Amérique","#006437","#FFFFFF","PAL"],
+  ["Inter Miami","Amérique","#F7B5CD","#231F20","MIA"],["Club América","Amérique","#FFF200","#00265E","AME"],
+  ["LA Galaxy","Amérique","#00245D","#FFD200","LAG"],["Peñarol","Amérique","#FFD100","#000000","PEN"],
+  ["Al Hilal","Asie","#0057B8","#FFFFFF","HIL"],["Al Nassr","Asie","#FFD500","#00205B","NAS"],
+  ["Al Ittihad","Asie","#FFD500","#000000","ITT"],["Urawa Red Diamonds","Asie","#E60012","#000000","URD"],
+  ["Jeonbuk Motors","Asie","#046A38","#FFD100","JEO"],["Persepolis","Asie","#E30613","#FFFFFF","PER"],
+  ["Yokohama F. Marinos","Asie","#003087","#E4002B","YFM"],["Al Sadd","Asie","#000000","#FFFFFF","SAD"],
+  ["Sydney FC","Océanie","#87CEEB","#00205B","SYD"],["Melbourne Victory","Océanie","#00205B","#FFFFFF","MVC"],
+  ["Auckland City","Océanie","#0057B8","#FFFFFF","AKL"],["Wellington Phoenix","Océanie","#FFD500","#000000","WPX"],
+  ["Brisbane Roar","Océanie","#F36F21","#5F259F","BRI"],["Adelaide United","Océanie","#E4002B","#00205B","ADL"]
+];
+function clubFlagSVG(c1,c2,abbr){
+  const txt = (c1.toUpperCase()==="#FFFFFF"||c1.toUpperCase()==="#FFD200"||c1.toUpperCase()==="#FFD500"||c1.toUpperCase()==="#FFF200"||c1.toUpperCase()==="#FFD100"||c1.toUpperCase()==="#FDE100"||c1.toUpperCase()==="#FFB612"||c1.toUpperCase()==="#F7B5CD"||c1.toUpperCase()==="#87CEEB")?"#222":"#fff";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200">
+    <rect width="320" height="200" fill="${c1}"/>
+    <path d="M0 200 L320 0 L320 200 Z" fill="${c2}"/>
+    <circle cx="160" cy="100" r="56" fill="rgba(0,0,0,.18)"/>
+    <circle cx="160" cy="100" r="52" fill="${c1}" stroke="${c2}" stroke-width="5"/>
+    <text x="160" y="112" font-family="Arial Black,Arial" font-size="34" font-weight="900" fill="${txt}" text-anchor="middle">${abbr}</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+const CLUBS = CLUBS_RAW.map(([name,continent,c1,c2,abbr])=>({id:"k-"+abbr,type:"club",name,continent,flag:clubFlagSVG(c1,c2,abbr)}));
+const ALL_TEAMS = [...COUNTRIES,...CLUBS];
+
+/* ================= ÉTAT ================= */
+const state = {
+  teams:{left:null,right:null},
+  bowl:"middle",
+  modal:{pos:null,type:"country",continent:"Tous",search:""},
+  calibrating:false
+};
+/* calibration indépendante pour chaque vidéo (bol) */
+let quadCfg = JSON.parse(localStorage.getItem("quadCfg_v3")||"null") ||
+  {left:structuredClone(DEFAULT_QUADS), middle:structuredClone(DEFAULT_QUADS), right:structuredClone(DEFAULT_QUADS)};
+function saveQuads(){ localStorage.setItem("quadCfg_v3", JSON.stringify(quadCfg)); }
+
+/* ================= BACKEND (rendu cuit dans la vidéo) ================= */
+/* fichier local → backend localhost ; déployé → même origine (le backend sert le front) */
+const BACKEND = location.protocol==="file:" ? "http://localhost:8000" : "";
+
+/* rasterise n'importe quel drapeau (PNG distant ou SVG data-URI) en PNG base64 */
+function rasterize(url){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.crossOrigin="anonymous";
+    img.onload=()=>{
+      const c=document.createElement("canvas");
+      c.width=640;c.height=400;
+      c.getContext("2d").drawImage(img,0,0,640,400);
+      res(c.toDataURL("image/png"));
+    };
+    img.onerror=rej;
+    img.src=url;
+  });
+}
+function drawPaperPNG(){
+  const c=document.createElement("canvas");
+  c.width=640;c.height=400;
+  const x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,640,400);
+  g.addColorStop(0,"#f6f3ec");g.addColorStop(1,"#e8e3d6");
+  x.fillStyle=g;x.fillRect(0,0,640,400);
+  x.fillStyle="#3d3a34";x.textAlign="center";
+  x.font="900 130px Georgia";x.fillText("DRAW",320,245);
+  return c.toDataURL("image/png");
+}
+async function renderServer(){
+  loader.classList.add("show");
+  try{
+    const cfg=quadCfg[state.bowl];
+    /* slot => le backend détecte lui-même les feuilles blanches ; quad = fallback.
+       Le DRAW est entièrement généré côté backend (encre réaliste sur la vraie feuille). */
+    const overlays=[{kind:"draw",slot:"middle",quad:cfg.middle}];
+    if(state.teams.left)  overlays.push({kind:"flag",image:await rasterize(state.teams.left.flag), slot:"left", quad:cfg.left});
+    if(state.teams.right) overlays.push({kind:"flag",image:await rasterize(state.teams.right.flag),slot:"right",quad:cfg.right});
+    const r=await fetch(BACKEND+"/api/render",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({video_url:VIDEOS[state.bowl],overlays,opacity:1.0,blur_sigma:0.5,auto_detect:true})
+    });
+    if(!r.ok) throw new Error((await r.json()).detail||r.status);
+    const {url}=await r.json();
+    video.src=BACKEND+url;
+    video.load();
+    video.play().catch(()=>{});
+  }catch(e){
+    /* backend pas (encore) prêt : on attend qu'il soit ON puis on relance */
+    showWait(true);
+    await waitForBackend();
+    showWait(false);
+    renderServer();
+  }
+}
+function setServerMode(on){
+  state.serverMode=on;
+  document.body.classList.toggle("server-mode",on);
+  const b=document.getElementById("btn-server");
+  b.textContent="🎬 Rendu serveur : "+(on?"ON":"OFF");
+}
+function showWait(on){
+  document.getElementById("backend-wait").style.display=on?"block":"none";
+  if(on)loader.classList.add("show");
+}
+async function waitForBackend(){
+  for(;;){
+    try{
+      const r=await fetch(BACKEND+"/api/health",{cache:"no-store"});
+      if(r.ok)return;
+    }catch(e){}
+    await new Promise(res=>setTimeout(res,2500));
+  }
+}
+/* ---- téléchargement de la vidéo affichée ---- */
+async function downloadVideo(){
+  const url=video.currentSrc||video.src;
+  if(!url)return;
+  const name="cat-oracle-"+state.bowl+(state.teams.left?"-"+state.teams.left.name:"")+(state.teams.right?"-vs-"+state.teams.right.name:"")+".mp4";
+  try{
+    const r=await fetch(url);
+    if(!r.ok)throw 0;
+    const blob=await r.blob();
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=name.replace(/\s+/g,"_");
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){ window.open(url,"_blank"); }
+}
+/* ================= VIDÉO ================= */
+const video = document.getElementById("bgvideo");
+const loader = document.getElementById("loader");
+function loadVideo(replay=false){
+  const src = VIDEOS[state.bowl];
+  if(!src || src.startsWith("__")){ return; }
+  hideBanner();
+  clearWinner();
+  if(state.serverMode){ renderServer(); return; }
+  loader.classList.add("show");
+  video.classList.add("fading");
+  setTimeout(()=>{
+    video.src = src;
+    video.load();
+    video.play().catch(()=>{});
+  }, replay?50:350);
+  autoCalibrate(); /* si le backend tourne : coins exacts détectés par vision */
+}
+/* calibration automatique des feuilles via le backend (silencieux si backend absent) */
+const autoCalDone={};
+async function autoCalibrate(){
+  const bowl=state.bowl, url=VIDEOS[bowl];
+  if(autoCalDone[url])return;   /* cache par vidéo, pas par bol */
+  try{
+    const r=await fetch(BACKEND+"/api/papers?video_url="+encodeURIComponent(url));
+    if(!r.ok)return;
+    const q=await r.json();
+    quadCfg[bowl]={left:q.left,middle:q.middle,right:q.right};
+    autoCalDone[url]=true;
+    saveQuads();
+    if(state.bowl===bowl)applyPapers();
+  }catch(e){/* backend absent : calibration manuelle (touche C) */}
+}
+/* le backend peut démarrer après la page : on retente régulièrement */
+setInterval(()=>{ if(!state.serverMode) autoCalibrate(); }, 5000);
+video.addEventListener("playing",()=>{loader.classList.remove("show");video.classList.remove("fading");});
+video.addEventListener("waiting",()=>loader.classList.add("show"));
+video.addEventListener("ended",()=>{ showResult(); });
+
+/* ================= RÉSULTAT ================= */
+const banner=document.getElementById("banner");
+function showResult(){
+  const el = document.getElementById("pf-"+state.bowl);
+  el.classList.add("winner");
+  if(state.bowl==="middle"){
+    document.getElementById("b-title").textContent = "🤝 Verdict du chat";
+    document.getElementById("b-team").textContent = "DRAW";
+  } else {
+    const t = state.teams[state.bowl];
+    document.getElementById("b-title").textContent = "🏆 Le chat a choisi";
+    document.getElementById("b-team").textContent = t ? t.name : ({left:"le bol de gauche",right:"le bol de droite"})[state.bowl];
+  }
+  banner.classList.add("show");
+}
+function hideBanner(){banner.classList.remove("show");}
+function clearWinner(){document.querySelectorAll(".paper-flag").forEach(p=>p.classList.remove("winner"));}
+
+/* ================= PROJECTION HOMOGRAPHIQUE SUR LES FEUILLES ================= */
+const BASE_W=300, BASE_H=180; /* taille de base de la feuille virtuelle */
+
+function gaussSolve(A,b){
+  const n=A.length;
+  for(let i=0;i<n;i++){
+    let max=i;
+    for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[max][i])) max=r;
+    [A[i],A[max]]=[A[max],A[i]]; [b[i],b[max]]=[b[max],b[i]];
+    for(let r=i+1;r<n;r++){
+      const f=A[r][i]/A[i][i];
+      for(let c=i;c<n;c++) A[r][c]-=f*A[i][c];
+      b[r]-=f*b[i];
+    }
+  }
+  const x=new Array(n).fill(0);
+  for(let i=n-1;i>=0;i--){
+    let s=b[i];
+    for(let c=i+1;c<n;c++) s-=A[i][c]*x[c];
+    x[i]=s/A[i][i];
+  }
+  return x;
+}
+/* mappe le rectangle (0,0)-(BASE_W,BASE_H) sur les 4 coins réels de la feuille */
+function quadTransform(quadPct){
+  const dst = quadPct.map(([x,y])=>[x/100*innerWidth, y/100*innerHeight]);
+  const src = [[0,0],[BASE_W,0],[BASE_W,BASE_H],[0,BASE_H]];
+  const A=[],B=[];
+  for(let i=0;i<4;i++){
+    const [x,y]=src[i],[X,Y]=dst[i];
+    A.push([x,y,1,0,0,0,-X*x,-X*y]); B.push(X);
+    A.push([0,0,0,x,y,1,-Y*x,-Y*y]); B.push(Y);
+  }
+  const h=gaussSolve(A,B);
+  return `matrix3d(${h[0]},${h[3]},0,${h[6]},${h[1]},${h[4]},0,${h[7]},0,0,1,0,${h[2]},${h[5]},0,1)`;
+}
+function applyPapers(){
+  const cfg = quadCfg[state.bowl];
+  for(const pos of ["left","middle","right"]){
+    const el = document.getElementById("pf-"+pos);
+    el.style.width = BASE_W+"px";
+    el.style.height= BASE_H+"px";
+    el.style.transform = quadTransform(cfg[pos]);
+  }
+  positionHandles();
+}
+window.addEventListener("resize",applyPapers);
+function renderFlag(pos){
+  const el = document.getElementById("pf-"+pos);
+  const t = state.teams[pos];
+  // drapeau imprimé exactement au centre de la feuille (pas de cadre, pas d'étiquette)
+  el.innerHTML = t ? `<div class="print"><img src="${t.flag}" alt=""></div>` : "";
+  const sf=document.getElementById("sf-"+pos), sn=document.getElementById("sn-"+pos);
+  if(t){ sf.innerHTML=`<img src="${t.flag}">`; sn.textContent=t.name; }
+  else { sf.textContent="➕"; sn.textContent="Choisir…"; }
+}
+
+/* ================= CALIBRATION (poignées sur les 4 coins de chaque feuille) ================= */
+let handles=[];
+function positionHandles(){
+  handles.forEach(h=>{
+    const q = quadCfg[state.bowl][h.dataset.pos][+h.dataset.idx];
+    h.style.left = q[0]+"vw";
+    h.style.top  = q[1]+"vh";
+  });
+}
+function enterCalibration(){
+  ["left","middle","right"].forEach(pos=>{
+    for(let i=0;i<4;i++){
+      const h=document.createElement("div");
+      h.className="cal-handle";
+      h.dataset.pos=pos; h.dataset.idx=i;
+      h.addEventListener("pointerdown",e=>{
+        h.setPointerCapture(e.pointerId);
+        const move=ev=>{
+          quadCfg[state.bowl][pos][i]=[ev.clientX/innerWidth*100, ev.clientY/innerHeight*100];
+          applyPapers();
+        };
+        const up=()=>{h.removeEventListener("pointermove",move);h.removeEventListener("pointerup",up);saveQuads();};
+        h.addEventListener("pointermove",move);
+        h.addEventListener("pointerup",up);
+      });
+      document.body.appendChild(h);
+      handles.push(h);
+    }
+  });
+  positionHandles();
+}
+function exitCalibration(){
+  handles.forEach(h=>h.remove());
+  handles=[];
+  saveQuads();
+}
+document.addEventListener("keydown",e=>{
+  if(e.key.toLowerCase()==="c" && !document.getElementById("modal-backdrop").classList.contains("open") && document.activeElement.tagName!=="INPUT"){
+    state.calibrating=!state.calibrating;
+    document.body.classList.toggle("calibrating",state.calibrating);
+    if(state.calibrating){ video.pause(); enterCalibration(); }
+    else { exitCalibration(); video.play().catch(()=>{}); }
+  }
+});
+
+/* ================= MODAL PICKER ================= */
+const backdrop=document.getElementById("modal-backdrop");
+const grid=document.getElementById("m-grid");
+const contWrap=document.getElementById("m-continents");
+const searchInput=document.getElementById("m-search");
+
+CONTINENTS.forEach(c=>{
+  const b=document.createElement("button");
+  b.className="cont-chip"+(c==="Tous"?" active":"");
+  b.textContent=c;
+  b.onclick=()=>{state.modal.continent=c;contWrap.querySelectorAll(".cont-chip").forEach(x=>x.classList.toggle("active",x.textContent===c));renderGrid();};
+  contWrap.appendChild(b);
+});
+document.querySelectorAll(".m-tab").forEach(t=>t.onclick=()=>{
+  state.modal.type=t.dataset.type;
+  document.querySelectorAll(".m-tab").forEach(x=>x.classList.toggle("active",x===t));
+  renderGrid();
+});
+searchInput.oninput=()=>{state.modal.search=searchInput.value.toLowerCase();renderGrid();};
+
+function renderGrid(){
+  const taken = Object.entries(state.teams).filter(([p,t])=>t&&p!==state.modal.pos).map(([,t])=>t.id);
+  const list = ALL_TEAMS.filter(t=>
+    t.type===state.modal.type &&
+    (state.modal.continent==="Tous"||t.continent===state.modal.continent) &&
+    t.name.toLowerCase().includes(state.modal.search) &&
+    !taken.includes(t.id)
+  );
+  grid.innerHTML="";
+  list.forEach(t=>{
+    const card=document.createElement("div");
+    card.className="team-card";
+    card.innerHTML=`<div class="tc-flag"><img src="${t.flag}" loading="lazy"></div><div class="tc-name">${t.name}</div>`;
+    card.onclick=()=>{ state.teams[state.modal.pos]=t; renderFlag(state.modal.pos); closeModal(); loadVideo(); };
+    grid.appendChild(card);
+  });
+  if(!list.length) grid.innerHTML='<div style="opacity:.5;padding:20px">Aucune équipe trouvée</div>';
+}
+function openModal(pos){
+  state.modal.pos=pos;state.modal.search="";searchInput.value="";
+  document.getElementById("m-pos-label").textContent=({left:"Équipe 1 (bol gauche)",right:"Équipe 2 (bol droit)"})[pos];
+  backdrop.classList.add("open");
+  renderGrid();
+  searchInput.focus();
+}
+function closeModal(){backdrop.classList.remove("open");}
+document.getElementById("m-close").onclick=closeModal;
+backdrop.addEventListener("click",e=>{if(e.target===backdrop)closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openModal(s.dataset.pos));
+
+/* ================= BOL / CONTRÔLES ================= */
+document.querySelectorAll(".bowl-btn").forEach(b=>b.onclick=()=>{
+  state.bowl=b.dataset.bowl;
+  document.querySelectorAll(".bowl-btn").forEach(x=>x.classList.toggle("active",x===b));
+  applyPapers(); /* chaque vidéo a sa propre calibration de feuilles */
+  loadVideo();
+});
+document.getElementById("btn-play").onclick=()=>loadVideo(true);
+document.getElementById("btn-dl").onclick=downloadVideo;
+document.getElementById("btn-server").onclick=()=>{ setServerMode(!state.serverMode); loadVideo(true); };
+document.getElementById("btn-fs").onclick=()=>{
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+};
+document.getElementById("btn-dock").onclick=()=>document.getElementById("dock").classList.toggle("hidden-dock");
+
+/* ================= INIT : mode serveur par défaut, démarrage quand le backend est prêt ================= */
+applyPapers();
+["left","right"].forEach(renderFlag);
+setServerMode(true);
+(async()=>{
+  showWait(true);
+  await waitForBackend();
+  showWait(false);
+  loadVideo(true);
+})();
+</script>
+</body>
+</html>
