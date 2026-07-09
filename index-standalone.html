@@ -323,45 +323,45 @@ const DEFAULT_QUADS = {
 const CONTINENTS = ["All","Europe","Africa","America","Asia","Oceania"];
 
 const COUNTRIES = [
-  ["fr","France","Europe"],["de","Germany","Europe"],["es","Spain","Europe"],["it","Italy","Europe"],
-  ["pt","Portugal","Europe"],["gb-eng","England","Europe"],["nl","Netherlands","Europe"],["be","Belgium","Europe"],
-  ["hr","Croatia","Europe"],["pl","Poland","Europe"],["ch","Switzerland","Europe"],["tr","Turkey","Europe"],
-  ["ma","Morocco","Africa"],["dz","Algeria","Africa"],["tn","Tunisia","Africa"],["eg","Egypt","Africa"],
-  ["sn","Senegal","Africa"],["ci","Ivory Coast","Africa"],["ng","Nigeria","Africa"],["cm","Cameroon","Africa"],
-  ["gh","Ghana","Africa"],["za","South Africa","Africa"],["ml","Mali","Africa"],["bf","Burkina Faso","Africa"],
-  ["br","Brazil","America"],["ar","Argentina","America"],["uy","Uruguay","America"],["us","USA","America"],
-  ["mx","Mexico","America"],["co","Colombia","America"],["cl","Chile","America"],["ca","Canada","America"],
-  ["pe","Peru","America"],["ec","Ecuador","America"],["py","Paraguay","America"],["ve","Venezuela","America"],
-  ["jp","Japan","Asia"],["kr","South Korea","Asia"],["sa","Saudi Arabia","Asia"],["qa","Qatar","Asia"],
-  ["ir","Iran","Asia"],["cn","China","Asia"],["in","India","Asia"],["uz","Uzbekistan","Asia"],
-  ["jo","Jordan","Asia"],["iq","Iraq","Asia"],["ae","United Arab Emirates","Asia"],["kw","Kuwait","Asia"],
-  ["au","Australia","Oceania"],["nz","New Zealand","Oceania"],["fj","Fiji","Oceania"],
-  ["pg","Papua New Guinea","Oceania"],["ws","Samoa","Oceania"],["sb","Solomon Islands","Oceania"]
-].map(([code,name,continent])=>({id:"c-"+code,type:"country",name,continent,flag:`https://flagcdn.com/w320/${code}.png`}));
+  ["fr","France","Europe",3],["de","Germany","Europe",9],["es","Spain","Europe",2],["it","Italy","Europe",11],
+  ["pt","Portugal","Europe",5],["gb-eng","England","Europe",4],["nl","Netherlands","Europe",7],["be","Belgium","Europe",8],
+  ["hr","Croatia","Europe",10],["pl","Poland","Europe",28],["ch","Switzerland","Europe",16],["tr","Turkey","Europe",26],
+  ["ma","Morocco","Africa",12],["dz","Algeria","Africa",35],["tn","Tunisia","Africa",46],["eg","Egypt","Africa",34],
+  ["sn","Senegal","Africa",19],["ci","Ivory Coast","Africa",44],["ng","Nigeria","Africa",41],["cm","Cameroon","Africa",51],
+  ["gh","Ghana","Africa",73],["za","South Africa","Africa",57],["ml","Mali","Africa",53],["bf","Burkina Faso","Africa",60],
+  ["br","Brazil","America",6],["ar","Argentina","America",1],["uy","Uruguay","America",15],["us","USA","America",17],
+  ["mx","Mexico","America",14],["co","Colombia","America",13],["cl","Chile","America",55],["ca","Canada","America",30],
+  ["pe","Peru","America",42],["ec","Ecuador","America",23],["py","Paraguay","America",37],["ve","Venezuela","America",45],
+  ["jp","Japan","Asia",18],["kr","South Korea","Asia",22],["sa","Saudi Arabia","Asia",58],["qa","Qatar","Asia",52],
+  ["ir","Iran","Asia",20],["cn","China","Asia",88],["in","India","Asia",127],["uz","Uzbekistan","Asia",54],
+  ["jo","Jordan","Asia",63],["iq","Iraq","Asia",59],["ae","United Arab Emirates","Asia",66],["kw","Kuwait","Asia",130],
+  ["au","Australia","Oceania",24],["nz","New Zealand","Oceania",83],["fj","Fiji","Oceania",145],
+  ["pg","Papua New Guinea","Oceania",158],["ws","Samoa","Oceania",185],["sb","Solomon Islands","Oceania",135]
+].map(([code,name,continent,rank])=>({id:"c-"+code,type:"country",name,continent,rank,flag:`https://flagcdn.com/w320/${code}.png`}));
 
 /* Clubs : drapeaux générés en SVG avec les couleurs du club */
 const CLUBS_RAW = [
-  ["Real Madrid","Europe","#FFFFFF","#FEBE10","RMA"],["FC Barcelona","Europe","#004D98","#A50044","BAR"],
-  ["PSG","Europe","#004170","#DA291C","PSG"],["Bayern Munich","Europe","#DC052D","#FFFFFF","FCB"],
-  ["Liverpool","Europe","#C8102E","#F6EB61","LIV"],["Manchester City","Europe","#6CABDD","#FFFFFF","MCI"],
-  ["Juventus","Europe","#000000","#FFFFFF","JUV"],["Inter Milan","Europe","#0068A8","#221F20","INT"],
-  ["AC Milan","Europe","#FB090B","#000000","ACM"],["Arsenal","Europe","#EF0107","#FFFFFF","ARS"],
-  ["Dortmund","Europe","#FDE100","#000000","BVB"],["Ajax","Europe","#D2122E","#FFFFFF","AJA"],
-  ["Al Ahly","Africa","#E30613","#FFFFFF","AHL"],["Zamalek","Africa","#FFFFFF","#E30613","ZAM"],
-  ["Wydad AC","Africa","#E30613","#FFFFFF","WAC"],["Raja CA","Africa","#00843D","#FFFFFF","RCA"],
-  ["Espérance Tunis","Africa","#E30613","#FFD200","EST"],["Mamelodi Sundowns","Africa","#FFD200","#0033A0","MSD"],
-  ["TP Mazembe","Africa","#000000","#FFFFFF","TPM"],["Kaizer Chiefs","Africa","#FFB612","#000000","KCH"],
-  ["Boca Juniors","America","#003DA5","#FFD100","BOC"],["River Plate","America","#FFFFFF","#E4002B","RIV"],
-  ["Flamengo","America","#C52613","#000000","FLA"],["Palmeiras","America","#006437","#FFFFFF","PAL"],
-  ["Inter Miami","America","#F7B5CD","#231F20","MIA"],["Club América","America","#FFF200","#00265E","AME"],
-  ["LA Galaxy","America","#00245D","#FFD200","LAG"],["Peñarol","America","#FFD100","#000000","PEN"],
-  ["Al Hilal","Asia","#0057B8","#FFFFFF","HIL"],["Al Nassr","Asia","#FFD500","#00205B","NAS"],
-  ["Al Ittihad","Asia","#FFD500","#000000","ITT"],["Urawa Red Diamonds","Asia","#E60012","#000000","URD"],
-  ["Jeonbuk Motors","Asia","#046A38","#FFD100","JEO"],["Persepolis","Asia","#E30613","#FFFFFF","PER"],
-  ["Yokohama F. Marinos","Asia","#003087","#E4002B","YFM"],["Al Sadd","Asia","#000000","#FFFFFF","SAD"],
-  ["Sydney FC","Oceania","#87CEEB","#00205B","SYD"],["Melbourne Victory","Oceania","#00205B","#FFFFFF","MVC"],
-  ["Auckland City","Oceania","#0057B8","#FFFFFF","AKL"],["Wellington Phoenix","Oceania","#FFD500","#000000","WPX"],
-  ["Brisbane Roar","Oceania","#F36F21","#5F259F","BRI"],["Adelaide United","Oceania","#E4002B","#00205B","ADL"]
+  ["Real Madrid","Europe","#FFFFFF","#FEBE10","RMA",1],["FC Barcelona","Europe","#004D98","#A50044","BAR",6],
+  ["PSG","Europe","#004170","#DA291C","PSG",5],["Bayern Munich","Europe","#DC052D","#FFFFFF","FCB",3],
+  ["Liverpool","Europe","#C8102E","#F6EB61","LIV",4],["Manchester City","Europe","#6CABDD","#FFFFFF","MCI",2],
+  ["Juventus","Europe","#000000","#FFFFFF","JUV",11],["Inter Milan","Europe","#0068A8","#221F20","INT",7],
+  ["AC Milan","Europe","#FB090B","#000000","ACM",10],["Arsenal","Europe","#EF0107","#FFFFFF","ARS",8],
+  ["Dortmund","Europe","#FDE100","#000000","BVB",12],["Ajax","Europe","#D2122E","#FFFFFF","AJA",20],
+  ["Al Ahly","Africa","#E30613","#FFFFFF","AHL",26],["Zamalek","Africa","#FFFFFF","#E30613","ZAM",46],
+  ["Wydad AC","Africa","#E30613","#FFFFFF","WAC",47],["Raja CA","Africa","#00843D","#FFFFFF","RCA",52],
+  ["Espérance Tunis","Africa","#E30613","#FFD200","EST",43],["Mamelodi Sundowns","Africa","#FFD200","#0033A0","MSD",41],
+  ["TP Mazembe","Africa","#000000","#FFFFFF","TPM",55],["Kaizer Chiefs","Africa","#FFB612","#000000","KCH",58],
+  ["Boca Juniors","America","#003DA5","#FFD100","BOC",25],["River Plate","America","#FFFFFF","#E4002B","RIV",24],
+  ["Flamengo","America","#C52613","#000000","FLA",15],["Palmeiras","America","#006437","#FFFFFF","PAL",16],
+  ["Inter Miami","America","#F7B5CD","#231F20","MIA",40],["Club América","America","#FFF200","#00265E","AME",30],
+  ["LA Galaxy","America","#00245D","#FFD200","LAG",45],["Peñarol","America","#FFD100","#000000","PEN",35],
+  ["Al Hilal","Asia","#0057B8","#FFFFFF","HIL",22],["Al Nassr","Asia","#FFD500","#00205B","NAS",28],
+  ["Al Ittihad","Asia","#FFD500","#000000","ITT",32],["Urawa Red Diamonds","Asia","#E60012","#000000","URD",38],
+  ["Jeonbuk Motors","Asia","#046A38","#FFD100","JEO",42],["Persepolis","Asia","#E30613","#FFFFFF","PER",48],
+  ["Yokohama F. Marinos","Asia","#003087","#E4002B","YFM",44],["Al Sadd","Asia","#000000","#FFFFFF","SAD",50],
+  ["Sydney FC","Oceania","#87CEEB","#00205B","SYD",60],["Melbourne Victory","Oceania","#00205B","#FFFFFF","MVC",62],
+  ["Auckland City","Oceania","#0057B8","#FFFFFF","AKL",70],["Wellington Phoenix","Oceania","#FFD500","#000000","WPX",65],
+  ["Brisbane Roar","Oceania","#F36F21","#5F259F","BRI",68],["Adelaide United","Oceania","#E4002B","#00205B","ADL",66]
 ];
 function clubFlagSVG(c1,c2,abbr){
   const txt = (c1.toUpperCase()==="#FFFFFF"||c1.toUpperCase()==="#FFD200"||c1.toUpperCase()==="#FFD500"||c1.toUpperCase()==="#FFF200"||c1.toUpperCase()==="#FFD100"||c1.toUpperCase()==="#FDE100"||c1.toUpperCase()==="#FFB612"||c1.toUpperCase()==="#F7B5CD"||c1.toUpperCase()==="#87CEEB")?"#222":"#fff";
@@ -374,7 +374,7 @@ function clubFlagSVG(c1,c2,abbr){
   </svg>`;
   return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
 }
-const CLUBS = CLUBS_RAW.map(([name,continent,c1,c2,abbr])=>({id:"k-"+abbr,type:"club",name,continent,flag:clubFlagSVG(c1,c2,abbr)}));
+const CLUBS = CLUBS_RAW.map(([name,continent,c1,c2,abbr,rank])=>({id:"k-"+abbr,type:"club",name,continent,rank,flag:clubFlagSVG(c1,c2,abbr)}));
 const ALL_TEAMS = [...COUNTRIES,...CLUBS];
 
 /* ================= ÉTAT ================= */
@@ -768,9 +768,13 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openModal(s.dataset.pos));
 
 /* ================= BOL / CONTRÔLES ================= */
-/* Minoucha's pick is DETERMINISTIC: same two teams + same month/year => same result,
-   so reloading the page never changes the verdict */
+/* Minoucha knows football: the stronger team (better world ranking) always wins.
+   Only when rankings are close (within ±5 positions) the result is "random" —
+   but deterministic per (teams, month, year), so reloading never changes the verdict. */
 function bowlFor(t1,t2){
+  const diff = t1.rank - t2.rank;             /* rank 1 = best */
+  if(diff < -5) return "left";                /* team 1 clearly stronger */
+  if(diff >  5) return "right";               /* team 2 clearly stronger */
   const d=new Date();
   const key=t1.id+"|"+t2.id+"|"+d.getMonth()+"|"+d.getFullYear();
   let h=5381;
