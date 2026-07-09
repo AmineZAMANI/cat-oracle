@@ -1,0 +1,23 @@
+name: fetch-videos
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download videos (server-side, no CORS)
+        run: |
+          mkdir -p videos
+          curl -fL -o videos/left.mp4   "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225827_6109b307-f32d-488b-8dac-44f968be8809.mp4"
+          curl -fL -o videos/middle.mp4 "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_234502_ec20af48-a233-4b1a-aa62-cb1d02538a31.mp4"
+          curl -fL -o videos/right.mp4  "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225833_040a9d9e-3249-4544-ade6-51153251cc9d.mp4"
+          ls -la videos/
+      - name: Commit videos
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add videos
+          git commit -m "Add videos same-origin (CORS-free for frontend-only version)"
+          git push
