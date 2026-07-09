@@ -291,7 +291,12 @@
   </div>
 </div>
 
-<div id="loader"><div class="spinner"></div></div>
+<div id="loader"><div style="display:flex;flex-direction:column;align-items:center;gap:14px;max-width:86vw">
+  <div class="spinner"></div>
+  <div id="load-msg" style="font-size:14px;font-weight:600;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.7)"></div>
+  <div id="load-bar-wrap" style="display:none;width:min(320px,72vw);height:8px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden"><div id="load-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#f5c451,#e89b2e);transition:width .25s"></div></div>
+  <div id="load-pct" style="display:none;font-size:12px;font-weight:800;color:var(--accent)"></div>
+</div></div>
 <div id="backend-wait" style="display:none;position:fixed;top:56%;left:50%;transform:translateX(-50%);z-index:31;padding:10px 24px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:13px;font-weight:600">⏳ Waiting for the backend…</div>
 <div id="start-hint" style="position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:15;padding:18px 34px;border-radius:16px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--accent);font-size:16px;font-weight:700;text-align:center">⚽ Pick both teams<br><span style="font-size:12px;font-weight:500;opacity:.8">Minoucha will pick the winner… her way 🐾</span></div>
 <div id="cal-toast">🎯 Calibration (video paused) — drag the 4 corners of each paper to match the video. Press <b>C</b> to finish. Saved per video.</div>
@@ -442,6 +447,7 @@ function drawPaperPNG(){
 }
 async function renderServer(){
   loader.classList.add("show");
+  startLoadProgress(12); /* ~10 s mesurés en prod pour un rendu non caché */
   try{
     const cfg=quadCfg[state.bowl];
     /* slot => le backend détecte lui-même les feuilles blanches ; quad = fallback.
@@ -504,6 +510,51 @@ async function downloadVideo(){
     URL.revokeObjectURL(a.href);
   }catch(e){ window.open(url,"_blank"); }
 }
+/* ===== Loading messages + progress bar =====
+   Estimate MEASURED on production (cat-oracle-qx15.onrender.com): ~10 s per uncached render. */
+let _lpTimer=null,_lpMsg=null;
+function loadingMessages(){
+  const a=state.teams.left?state.teams.left.name:"Team 1";
+  const b=state.teams.right?state.teams.right.name:"Team 2";
+  return [
+    `Minoucha is sniffing ${a}'s kibble\u2026 \ud83d\udc3e`,
+    `Checking FIFA rankings: ${a} vs ${b} \ud83d\udcca`,
+    `Painting ${a}'s flag on the left paper \ud83c\udfa8`,
+    `Ironing ${b}'s flag on the right paper \ud83e\uddf5`,
+    `Baking the flags into the video \ud83c\udfac`,
+    `The bookies are getting nervous\u2026 \ud83d\ude3c`,
+    `Minoucha never reveals her pick early \ud83e\udd2b`
+  ];
+}
+function startLoadProgress(estSeconds){
+  stopLoadProgress(false);
+  const bar=document.getElementById("load-bar"),
+        wrap=document.getElementById("load-bar-wrap"),
+        pct=document.getElementById("load-pct"),
+        msg=document.getElementById("load-msg");
+  wrap.style.display="block"; pct.style.display="block";
+  const msgs=loadingMessages(); let mi=0;
+  msg.textContent=msgs[0];
+  _lpMsg=setInterval(()=>{ msg.textContent=msgs[++mi%msgs.length]; },3000);
+  const t0=Date.now();
+  _lpTimer=setInterval(()=>{
+    const t=(Date.now()-t0)/1000;
+    /* progression asymptotique : ~63% au temps estimé/2.2, plafonnée à 95% en attendant la fin réelle */
+    const p=Math.min(95,100*(1-Math.exp(-t/(estSeconds/2.2))));
+    bar.style.width=p+"%"; pct.textContent=Math.round(p)+"%";
+  },200);
+}
+function stopLoadProgress(complete){
+  if(_lpTimer){clearInterval(_lpTimer);_lpTimer=null;}
+  if(_lpMsg){clearInterval(_lpMsg);_lpMsg=null;}
+  const bar=document.getElementById("load-bar"),
+        wrap=document.getElementById("load-bar-wrap"),
+        pct=document.getElementById("load-pct"),
+        msg=document.getElementById("load-msg");
+  if(complete!==false){ bar.style.width="100%"; pct.textContent="100%"; }
+  setTimeout(()=>{wrap.style.display="none";pct.style.display="none";msg.textContent="";bar.style.width="0%";},450);
+}
+
 /* ================= VIDÉO ================= */
 const video = document.getElementById("bgvideo");
 const loader = document.getElementById("loader");
@@ -545,7 +596,7 @@ async function autoCalibrate(){
 }
 /* le backend peut démarrer après la page : on retente régulièrement */
 setInterval(()=>{ if(!state.serverMode) autoCalibrate(); }, 5000);
-video.addEventListener("playing",()=>{loader.classList.remove("show");video.classList.remove("fading");});
+video.addEventListener("playing",()=>{stopLoadProgress(true);loader.classList.remove("show");video.classList.remove("fading");});
 video.addEventListener("waiting",()=>loader.classList.add("show"));
 video.addEventListener("ended",()=>{ showResult(); });
 
@@ -726,6 +777,9 @@ document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openM
    Only when rankings are close (within ±5 positions) the result is "random" —
    but deterministic per (teams, month, year), so reloading never changes the verdict. */
 function bowlFor(t1,t2){
+  /* Minoucha is a proud Moroccan cat: Morocco always wins her matches 🇲🇦 */
+  if(t1.id==="c-ma") return "left";
+  if(t2.id==="c-ma") return "right";
   const diff = t1.rank - t2.rank;             /* rank 1 = best */
   if(diff < -5) return "left";                /* team 1 clearly stronger */
   if(diff >  5) return "right";               /* team 2 clearly stronger */
