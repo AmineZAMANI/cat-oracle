@@ -616,6 +616,7 @@ function startLoadProgress(estSeconds){
         wrap=document.getElementById("load-bar-wrap"),
         pct=document.getElementById("load-pct"),
         msg=document.getElementById("load-msg");
+  bar.style.width="0%"; pct.textContent="0%";
   wrap.style.display="block"; pct.style.display="block";
   const msgs=loadingMessages(); let mi=0;
   msg.textContent=msgs[0];
@@ -631,12 +632,14 @@ function startLoadProgress(estSeconds){
 function stopLoadProgress(complete){
   if(_lpTimer){clearInterval(_lpTimer);_lpTimer=null;}
   if(_lpMsg){clearInterval(_lpMsg);_lpMsg=null;}
+  if(complete===false) return; /* simple reset avant un nouveau départ : ne rien cacher */
   const bar=document.getElementById("load-bar"),
         wrap=document.getElementById("load-bar-wrap"),
         pct=document.getElementById("load-pct"),
         msg=document.getElementById("load-msg");
-  if(complete!==false){ bar.style.width="100%"; pct.textContent="100%"; }
-  setTimeout(()=>{wrap.style.display="none";pct.style.display="none";msg.textContent="";bar.style.width="0%";},450);
+  bar.style.width="100%"; pct.textContent="100%";
+  /* la barre reste visible jusqu'au rendu final, puis se ferme proprement */
+  setTimeout(()=>{wrap.style.display="none";pct.style.display="none";msg.textContent="";bar.style.width="0%";},600);
 }
 
 /* ================= VIDÉO ================= */
