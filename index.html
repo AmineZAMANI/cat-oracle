@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🐱 Cat Oracle — Le chat choisit le vainqueur</title>
+<title>🐱 Minoucha — Football Oracle</title>
 <style>
   :root{
     --glass: rgba(15,15,20,.55);
@@ -229,26 +229,26 @@
 </header>
 
 <div id="banner">
-  <div class="b-title" id="b-title">Le chat a choisi</div>
+  <div class="b-title" id="b-title">The cat picked</div>
   <div class="b-team" id="b-team"></div>
 </div>
 
 <div id="dock">
   <div class="dock-row" id="slots">
     <div class="team-slot" data-pos="left">
-      <span class="slot-pos">🥣 Équipe 1 — Gauche</span>
+      <span class="slot-pos">🥣 Team 1 — Left</span>
       <div class="slot-flag" id="sf-left">➕</div>
-      <span class="slot-name" id="sn-left">Choisir…</span>
+      <span class="slot-name" id="sn-left">Pick…</span>
     </div>
-    <div class="team-slot" style="cursor:default;opacity:.75" title="Le bol du milieu = match nul">
-      <span class="slot-pos">🥣 Milieu</span>
+    <div class="team-slot" style="cursor:default;opacity:.75" title="Middle bowl = draw">
+      <span class="slot-pos">🥣 Middle</span>
       <div class="slot-flag" style="font-size:13px;font-weight:800;color:#3d3a34;background:#f2eee4">DRAW</div>
       <span class="slot-name">Draw</span>
     </div>
     <div class="team-slot" data-pos="right">
-      <span class="slot-pos">🥣 Équipe 2 — Droite</span>
+      <span class="slot-pos">🥣 Team 2 — Right</span>
       <div class="slot-flag" id="sf-right">➕</div>
-      <span class="slot-name" id="sn-right">Choisir…</span>
+      <span class="slot-name" id="sn-right">Pick…</span>
     </div>
   </div>
   <div class="dock-row">
@@ -258,17 +258,17 @@
       <button class="bowl-btn active" data-bowl="middle"></button>
       <button class="bowl-btn" data-bowl="right"></button>
     </div>
-    <button class="play-btn" id="btn-play">▶ Rejouer la vidéo</button>
-    <button class="play-btn" id="btn-dl" style="background:linear-gradient(135deg,#9be09b,#3f9d3f);box-shadow:0 6px 22px rgba(63,157,63,.4)" title="Télécharger la vidéo affichée">⬇ Télécharger</button>
+    <button class="play-btn" id="btn-play">▶ Replay</button>
+    <button class="play-btn" id="btn-dl" style="background:linear-gradient(135deg,#9be09b,#3f9d3f);box-shadow:0 6px 22px rgba(63,157,63,.4)" title="Download the displayed video">⬇ Download</button>
     <button class="play-btn" id="btn-server" style="display:none" title="Rendu serveur (toujours actif)">🎬 Rendu serveur : ON</button>
   </div>
 </div>
 
 <div id="loader"><div class="spinner"></div></div>
-<div id="backend-wait" style="display:none;position:fixed;top:56%;left:50%;transform:translateX(-50%);z-index:31;padding:10px 24px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:13px;font-weight:600">⏳ En attente du backend…</div>
-<div id="start-hint" style="position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:15;padding:18px 34px;border-radius:16px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--accent);font-size:16px;font-weight:700;text-align:center">⚽ Choisis les deux équipes<br><span style="font-size:12px;font-weight:500;opacity:.8">Minoucha décidera du vainqueur… à sa façon 🐾</span></div>
-<div id="cal-toast">🎯 Calibration (vidéo en pause) — glissez les 4 coins de chaque feuille pour les faire coïncider avec la vidéo. Touche <b>C</b> pour terminer. Mémorisé par vidéo.</div>
-<div id="hint">Astuce : touche <b>C</b> = calibrer la position des feuilles sur la vidéo</div>
+<div id="backend-wait" style="display:none;position:fixed;top:56%;left:50%;transform:translateX(-50%);z-index:31;padding:10px 24px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:13px;font-weight:600">⏳ Waiting for the backend…</div>
+<div id="start-hint" style="position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:15;padding:18px 34px;border-radius:16px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--accent);font-size:16px;font-weight:700;text-align:center">⚽ Pick both teams<br><span style="font-size:12px;font-weight:500;opacity:.8">Minoucha will pick the winner… her way 🐾</span></div>
+<div id="cal-toast">🎯 Calibration (video paused) — drag the 4 corners of each paper to match the video. Press <b>C</b> to finish. Saved per video.</div>
+<div id="hint">Tip: press <b>C</b> to calibrate the papers position on the video</div>
 
 <!-- filtre de déformation papier (réalisme : le drapeau épouse le grain de la feuille) -->
 <svg width="0" height="0" style="position:absolute">
@@ -282,15 +282,15 @@
 <div id="modal-backdrop">
   <div id="modal">
     <div class="m-head">
-      <h2>Choisir l'équipe — <em id="m-pos-label"></em></h2>
+      <h2>Pick a team — <em id="m-pos-label"></em></h2>
       <button class="m-close" id="m-close">✕</button>
     </div>
     <div class="m-tabs">
-      <button class="m-tab active" data-type="country">🌍 Pays</button>
+      <button class="m-tab active" data-type="country">🌍 Countries</button>
       <button class="m-tab" data-type="club">⚽ Clubs</button>
     </div>
     <div class="m-continents" id="m-continents"></div>
-    <input id="m-search" placeholder="Rechercher une équipe…">
+    <input id="m-search" placeholder="Search a team…">
     <div id="m-grid"></div>
   </div>
 </div>
@@ -314,48 +314,48 @@ const DEFAULT_QUADS = {
 };
 
 /* ================= DONNÉES ÉQUIPES ================= */
-const CONTINENTS = ["Tous","Europe","Afrique","Amérique","Asie","Océanie"];
+const CONTINENTS = ["All","Europe","Africa","America","Asia","Oceania"];
 
 const COUNTRIES = [
-  ["fr","France","Europe"],["de","Allemagne","Europe"],["es","Espagne","Europe"],["it","Italie","Europe"],
-  ["pt","Portugal","Europe"],["gb-eng","Angleterre","Europe"],["nl","Pays-Bas","Europe"],["be","Belgique","Europe"],
-  ["hr","Croatie","Europe"],["pl","Pologne","Europe"],["ch","Suisse","Europe"],["tr","Turquie","Europe"],
-  ["ma","Maroc","Afrique"],["dz","Algérie","Afrique"],["tn","Tunisie","Afrique"],["eg","Égypte","Afrique"],
-  ["sn","Sénégal","Afrique"],["ci","Côte d'Ivoire","Afrique"],["ng","Nigeria","Afrique"],["cm","Cameroun","Afrique"],
-  ["gh","Ghana","Afrique"],["za","Afrique du Sud","Afrique"],["ml","Mali","Afrique"],["bf","Burkina Faso","Afrique"],
-  ["br","Brésil","Amérique"],["ar","Argentine","Amérique"],["uy","Uruguay","Amérique"],["us","États-Unis","Amérique"],
-  ["mx","Mexique","Amérique"],["co","Colombie","Amérique"],["cl","Chili","Amérique"],["ca","Canada","Amérique"],
-  ["pe","Pérou","Amérique"],["ec","Équateur","Amérique"],["py","Paraguay","Amérique"],["ve","Venezuela","Amérique"],
-  ["jp","Japon","Asie"],["kr","Corée du Sud","Asie"],["sa","Arabie Saoudite","Asie"],["qa","Qatar","Asie"],
-  ["ir","Iran","Asie"],["cn","Chine","Asie"],["in","Inde","Asie"],["uz","Ouzbékistan","Asie"],
-  ["jo","Jordanie","Asie"],["iq","Irak","Asie"],["ae","Émirats Arabes Unis","Asie"],["kw","Koweït","Asie"],
-  ["au","Australie","Océanie"],["nz","Nouvelle-Zélande","Océanie"],["fj","Fidji","Océanie"],
-  ["pg","Papouasie-N.-Guinée","Océanie"],["ws","Samoa","Océanie"],["sb","Îles Salomon","Océanie"]
+  ["fr","France","Europe"],["de","Germany","Europe"],["es","Spain","Europe"],["it","Italy","Europe"],
+  ["pt","Portugal","Europe"],["gb-eng","England","Europe"],["nl","Netherlands","Europe"],["be","Belgium","Europe"],
+  ["hr","Croatia","Europe"],["pl","Poland","Europe"],["ch","Switzerland","Europe"],["tr","Turkey","Europe"],
+  ["ma","Morocco","Africa"],["dz","Algeria","Africa"],["tn","Tunisia","Africa"],["eg","Egypt","Africa"],
+  ["sn","Senegal","Africa"],["ci","Ivory Coast","Africa"],["ng","Nigeria","Africa"],["cm","Cameroon","Africa"],
+  ["gh","Ghana","Africa"],["za","South Africa","Africa"],["ml","Mali","Africa"],["bf","Burkina Faso","Africa"],
+  ["br","Brazil","America"],["ar","Argentina","America"],["uy","Uruguay","America"],["us","USA","America"],
+  ["mx","Mexico","America"],["co","Colombia","America"],["cl","Chile","America"],["ca","Canada","America"],
+  ["pe","Peru","America"],["ec","Ecuador","America"],["py","Paraguay","America"],["ve","Venezuela","America"],
+  ["jp","Japan","Asia"],["kr","South Korea","Asia"],["sa","Saudi Arabia","Asia"],["qa","Qatar","Asia"],
+  ["ir","Iran","Asia"],["cn","China","Asia"],["in","India","Asia"],["uz","Uzbekistan","Asia"],
+  ["jo","Jordan","Asia"],["iq","Iraq","Asia"],["ae","United Arab Emirates","Asia"],["kw","Kuwait","Asia"],
+  ["au","Australia","Oceania"],["nz","New Zealand","Oceania"],["fj","Fiji","Oceania"],
+  ["pg","Papua New Guinea","Oceania"],["ws","Samoa","Oceania"],["sb","Solomon Islands","Oceania"]
 ].map(([code,name,continent])=>({id:"c-"+code,type:"country",name,continent,flag:`https://flagcdn.com/w320/${code}.png`}));
 
 /* Clubs : drapeaux générés en SVG avec les couleurs du club */
 const CLUBS_RAW = [
-  ["Real Madrid","Europe","#FFFFFF","#FEBE10","RMA"],["FC Barcelone","Europe","#004D98","#A50044","BAR"],
+  ["Real Madrid","Europe","#FFFFFF","#FEBE10","RMA"],["FC Barcelona","Europe","#004D98","#A50044","BAR"],
   ["PSG","Europe","#004170","#DA291C","PSG"],["Bayern Munich","Europe","#DC052D","#FFFFFF","FCB"],
   ["Liverpool","Europe","#C8102E","#F6EB61","LIV"],["Manchester City","Europe","#6CABDD","#FFFFFF","MCI"],
   ["Juventus","Europe","#000000","#FFFFFF","JUV"],["Inter Milan","Europe","#0068A8","#221F20","INT"],
   ["AC Milan","Europe","#FB090B","#000000","ACM"],["Arsenal","Europe","#EF0107","#FFFFFF","ARS"],
   ["Dortmund","Europe","#FDE100","#000000","BVB"],["Ajax","Europe","#D2122E","#FFFFFF","AJA"],
-  ["Al Ahly","Afrique","#E30613","#FFFFFF","AHL"],["Zamalek","Afrique","#FFFFFF","#E30613","ZAM"],
-  ["Wydad AC","Afrique","#E30613","#FFFFFF","WAC"],["Raja CA","Afrique","#00843D","#FFFFFF","RCA"],
-  ["Espérance Tunis","Afrique","#E30613","#FFD200","EST"],["Mamelodi Sundowns","Afrique","#FFD200","#0033A0","MSD"],
-  ["TP Mazembe","Afrique","#000000","#FFFFFF","TPM"],["Kaizer Chiefs","Afrique","#FFB612","#000000","KCH"],
-  ["Boca Juniors","Amérique","#003DA5","#FFD100","BOC"],["River Plate","Amérique","#FFFFFF","#E4002B","RIV"],
-  ["Flamengo","Amérique","#C52613","#000000","FLA"],["Palmeiras","Amérique","#006437","#FFFFFF","PAL"],
-  ["Inter Miami","Amérique","#F7B5CD","#231F20","MIA"],["Club América","Amérique","#FFF200","#00265E","AME"],
-  ["LA Galaxy","Amérique","#00245D","#FFD200","LAG"],["Peñarol","Amérique","#FFD100","#000000","PEN"],
-  ["Al Hilal","Asie","#0057B8","#FFFFFF","HIL"],["Al Nassr","Asie","#FFD500","#00205B","NAS"],
-  ["Al Ittihad","Asie","#FFD500","#000000","ITT"],["Urawa Red Diamonds","Asie","#E60012","#000000","URD"],
-  ["Jeonbuk Motors","Asie","#046A38","#FFD100","JEO"],["Persepolis","Asie","#E30613","#FFFFFF","PER"],
-  ["Yokohama F. Marinos","Asie","#003087","#E4002B","YFM"],["Al Sadd","Asie","#000000","#FFFFFF","SAD"],
-  ["Sydney FC","Océanie","#87CEEB","#00205B","SYD"],["Melbourne Victory","Océanie","#00205B","#FFFFFF","MVC"],
-  ["Auckland City","Océanie","#0057B8","#FFFFFF","AKL"],["Wellington Phoenix","Océanie","#FFD500","#000000","WPX"],
-  ["Brisbane Roar","Océanie","#F36F21","#5F259F","BRI"],["Adelaide United","Océanie","#E4002B","#00205B","ADL"]
+  ["Al Ahly","Africa","#E30613","#FFFFFF","AHL"],["Zamalek","Africa","#FFFFFF","#E30613","ZAM"],
+  ["Wydad AC","Africa","#E30613","#FFFFFF","WAC"],["Raja CA","Africa","#00843D","#FFFFFF","RCA"],
+  ["Espérance Tunis","Africa","#E30613","#FFD200","EST"],["Mamelodi Sundowns","Africa","#FFD200","#0033A0","MSD"],
+  ["TP Mazembe","Africa","#000000","#FFFFFF","TPM"],["Kaizer Chiefs","Africa","#FFB612","#000000","KCH"],
+  ["Boca Juniors","America","#003DA5","#FFD100","BOC"],["River Plate","America","#FFFFFF","#E4002B","RIV"],
+  ["Flamengo","America","#C52613","#000000","FLA"],["Palmeiras","America","#006437","#FFFFFF","PAL"],
+  ["Inter Miami","America","#F7B5CD","#231F20","MIA"],["Club América","America","#FFF200","#00265E","AME"],
+  ["LA Galaxy","America","#00245D","#FFD200","LAG"],["Peñarol","America","#FFD100","#000000","PEN"],
+  ["Al Hilal","Asia","#0057B8","#FFFFFF","HIL"],["Al Nassr","Asia","#FFD500","#00205B","NAS"],
+  ["Al Ittihad","Asia","#FFD500","#000000","ITT"],["Urawa Red Diamonds","Asia","#E60012","#000000","URD"],
+  ["Jeonbuk Motors","Asia","#046A38","#FFD100","JEO"],["Persepolis","Asia","#E30613","#FFFFFF","PER"],
+  ["Yokohama F. Marinos","Asia","#003087","#E4002B","YFM"],["Al Sadd","Asia","#000000","#FFFFFF","SAD"],
+  ["Sydney FC","Oceania","#87CEEB","#00205B","SYD"],["Melbourne Victory","Oceania","#00205B","#FFFFFF","MVC"],
+  ["Auckland City","Oceania","#0057B8","#FFFFFF","AKL"],["Wellington Phoenix","Oceania","#FFD500","#000000","WPX"],
+  ["Brisbane Roar","Oceania","#F36F21","#5F259F","BRI"],["Adelaide United","Oceania","#E4002B","#00205B","ADL"]
 ];
 function clubFlagSVG(c1,c2,abbr){
   const txt = (c1.toUpperCase()==="#FFFFFF"||c1.toUpperCase()==="#FFD200"||c1.toUpperCase()==="#FFD500"||c1.toUpperCase()==="#FFF200"||c1.toUpperCase()==="#FFD100"||c1.toUpperCase()==="#FDE100"||c1.toUpperCase()==="#FFB612"||c1.toUpperCase()==="#F7B5CD"||c1.toUpperCase()==="#87CEEB")?"#222":"#fff";
@@ -375,7 +375,7 @@ const ALL_TEAMS = [...COUNTRIES,...CLUBS];
 const state = {
   teams:{left:null,right:null},
   bowl:"middle",
-  modal:{pos:null,type:"country",continent:"Tous",search:""},
+  modal:{pos:null,type:"country",continent:"All",search:""},
   calibrating:false
 };
 /* calibration indépendante pour chaque vidéo (bol) */
@@ -528,12 +528,12 @@ function showResult(){
   const el = document.getElementById("pf-"+state.bowl);
   el.classList.add("winner");
   if(state.bowl==="middle"){
-    document.getElementById("b-title").textContent = "🤝 Verdict du chat";
+    document.getElementById("b-title").textContent = "🤝 Cat's verdict";
     document.getElementById("b-team").textContent = "DRAW";
   } else {
     const t = state.teams[state.bowl];
-    document.getElementById("b-title").textContent = "🏆 Le chat a choisi";
-    document.getElementById("b-team").textContent = t ? t.name : ({left:"le bol de gauche",right:"le bol de droite"})[state.bowl];
+    document.getElementById("b-title").textContent = "🏆 The cat picked";
+    document.getElementById("b-team").textContent = t ? t.name : ({left:"the left bowl",right:"the right bowl"})[state.bowl];
   }
   banner.classList.add("show");
 }
@@ -594,7 +594,7 @@ function renderFlag(pos){
   el.innerHTML = t ? `<div class="print"><img src="${t.flag}" alt=""></div>` : "";
   const sf=document.getElementById("sf-"+pos), sn=document.getElementById("sn-"+pos);
   if(t){ sf.innerHTML=`<img src="${t.flag}">`; sn.textContent=t.name; }
-  else { sf.textContent="➕"; sn.textContent="Choisir…"; }
+  else { sf.textContent="➕"; sn.textContent="Pick…"; }
 }
 
 /* ================= CALIBRATION (poignées sur les 4 coins de chaque feuille) ================= */
@@ -650,7 +650,7 @@ const searchInput=document.getElementById("m-search");
 
 CONTINENTS.forEach(c=>{
   const b=document.createElement("button");
-  b.className="cont-chip"+(c==="Tous"?" active":"");
+  b.className="cont-chip"+(c==="All"?" active":"");
   b.textContent=c;
   b.onclick=()=>{state.modal.continent=c;contWrap.querySelectorAll(".cont-chip").forEach(x=>x.classList.toggle("active",x.textContent===c));renderGrid();};
   contWrap.appendChild(b);
@@ -666,7 +666,7 @@ function renderGrid(){
   const taken = Object.entries(state.teams).filter(([p,t])=>t&&p!==state.modal.pos).map(([,t])=>t.id);
   const list = ALL_TEAMS.filter(t=>
     t.type===state.modal.type &&
-    (state.modal.continent==="Tous"||t.continent===state.modal.continent) &&
+    (state.modal.continent==="All"||t.continent===state.modal.continent) &&
     t.name.toLowerCase().includes(state.modal.search) &&
     !taken.includes(t.id)
   );
@@ -678,11 +678,11 @@ function renderGrid(){
     card.onclick=()=>{ state.teams[state.modal.pos]=t; renderFlag(state.modal.pos); closeModal(); newPrediction(); };
     grid.appendChild(card);
   });
-  if(!list.length) grid.innerHTML='<div style="opacity:.5;padding:20px">Aucune équipe trouvée</div>';
+  if(!list.length) grid.innerHTML='<div style="opacity:.5;padding:20px">No team found</div>';
 }
 function openModal(pos){
   state.modal.pos=pos;state.modal.search="";searchInput.value="";
-  document.getElementById("m-pos-label").textContent=({left:"Équipe 1 (bol gauche)",right:"Équipe 2 (bol droit)"})[pos];
+  document.getElementById("m-pos-label").textContent=({left:"Team 1 (left bowl)",right:"Team 2 (right bowl)"})[pos];
   backdrop.classList.add("open");
   renderGrid();
   searchInput.focus();
@@ -695,10 +695,18 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openModal(s.dataset.pos));
 
 /* ================= BOL / CONTRÔLES ================= */
-/* Minoucha choisit le bol ALÉATOIREMENT — le user ne connaît pas la destination */
+/* Minoucha's pick is DETERMINISTIC: same two teams + same month/year => same result,
+   so reloading the page never changes the verdict */
+function bowlFor(t1,t2){
+  const d=new Date();
+  const key=t1.id+"|"+t2.id+"|"+d.getMonth()+"|"+d.getFullYear();
+  let h=5381;
+  for(const ch of key) h=(((h*33)>>>0)^ch.charCodeAt(0))>>>0;
+  return ["left","middle","right"][h%3];
+}
 function newPrediction(){
   if(!state.teams.left || !state.teams.right){ loadVideo(); return; }
-  state.bowl = ["left","middle","right"][Math.floor(Math.random()*3)];
+  state.bowl = bowlFor(state.teams.left, state.teams.right);
   applyPapers(); /* chaque vidéo a sa propre calibration de feuilles */
   loadVideo(true);
 }
