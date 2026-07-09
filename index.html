@@ -218,7 +218,10 @@
 </div>
 
 <header>
-  <h1>🐱 Cat <span>Oracle</span> — le chat choisit le vainqueur</h1>
+  <div>
+    <h1>🐱 <span>Minoucha</span></h1>
+    <div style="font-size:12px;opacity:.85;margin-top:3px;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.6)">World's greatest football-predicting cat. The bookies hate her. 🐾</div>
+  </div>
   <div class="top-actions">
     <button class="icon-btn" id="btn-dock" title="Afficher/masquer les contrôles">☰</button>
     <button class="icon-btn" id="btn-fs" title="Plein écran">⛶</button>
@@ -249,10 +252,11 @@
     </div>
   </div>
   <div class="dock-row">
-    <div class="bowl-group">
-      <button class="bowl-btn" data-bowl="left">⬅️ Bol gauche<small>victoire 1</small></button>
-      <button class="bowl-btn active" data-bowl="middle">🥣 Bol milieu<small>match nul</small></button>
-      <button class="bowl-btn" data-bowl="right">Bol droit ➡️<small>victoire 2</small></button>
+    <!-- le bol est choisi ALÉATOIREMENT par Minoucha : pas de sélecteur -->
+    <div class="bowl-group" style="display:none">
+      <button class="bowl-btn" data-bowl="left"></button>
+      <button class="bowl-btn active" data-bowl="middle"></button>
+      <button class="bowl-btn" data-bowl="right"></button>
     </div>
     <button class="play-btn" id="btn-play">▶ Rejouer la vidéo</button>
     <button class="play-btn" id="btn-dl" style="background:linear-gradient(135deg,#9be09b,#3f9d3f);box-shadow:0 6px 22px rgba(63,157,63,.4)" title="Télécharger la vidéo affichée">⬇ Télécharger</button>
@@ -262,6 +266,7 @@
 
 <div id="loader"><div class="spinner"></div></div>
 <div id="backend-wait" style="display:none;position:fixed;top:56%;left:50%;transform:translateX(-50%);z-index:31;padding:10px 24px;border-radius:12px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:13px;font-weight:600">⏳ En attente du backend…</div>
+<div id="start-hint" style="position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:15;padding:18px 34px;border-radius:16px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--accent);font-size:16px;font-weight:700;text-align:center">⚽ Choisis les deux équipes<br><span style="font-size:12px;font-weight:500;opacity:.8">Minoucha décidera du vainqueur… à sa façon 🐾</span></div>
 <div id="cal-toast">🎯 Calibration (vidéo en pause) — glissez les 4 coins de chaque feuille pour les faire coïncider avec la vidéo. Touche <b>C</b> pour terminer. Mémorisé par vidéo.</div>
 <div id="hint">Astuce : touche <b>C</b> = calibrer la position des feuilles sur la vidéo</div>
 
@@ -476,6 +481,12 @@ async function downloadVideo(){
 const video = document.getElementById("bgvideo");
 const loader = document.getElementById("loader");
 function loadVideo(replay=false){
+  /* pas de vidéo tant que les deux équipes ne sont pas choisies */
+  if(!state.teams.left || !state.teams.right){
+    document.getElementById("start-hint").style.display="block";
+    return;
+  }
+  document.getElementById("start-hint").style.display="none";
   const src = VIDEOS[state.bowl];
   if(!src || src.startsWith("__")){ return; }
   hideBanner();
@@ -664,7 +675,7 @@ function renderGrid(){
     const card=document.createElement("div");
     card.className="team-card";
     card.innerHTML=`<div class="tc-flag"><img src="${t.flag}" loading="lazy"></div><div class="tc-name">${t.name}</div>`;
-    card.onclick=()=>{ state.teams[state.modal.pos]=t; renderFlag(state.modal.pos); closeModal(); loadVideo(); };
+    card.onclick=()=>{ state.teams[state.modal.pos]=t; renderFlag(state.modal.pos); closeModal(); newPrediction(); };
     grid.appendChild(card);
   });
   if(!list.length) grid.innerHTML='<div style="opacity:.5;padding:20px">Aucune équipe trouvée</div>';
@@ -684,12 +695,13 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openModal(s.dataset.pos));
 
 /* ================= BOL / CONTRÔLES ================= */
-document.querySelectorAll(".bowl-btn").forEach(b=>b.onclick=()=>{
-  state.bowl=b.dataset.bowl;
-  document.querySelectorAll(".bowl-btn").forEach(x=>x.classList.toggle("active",x===b));
+/* Minoucha choisit le bol ALÉATOIREMENT — le user ne connaît pas la destination */
+function newPrediction(){
+  if(!state.teams.left || !state.teams.right){ loadVideo(); return; }
+  state.bowl = ["left","middle","right"][Math.floor(Math.random()*3)];
   applyPapers(); /* chaque vidéo a sa propre calibration de feuilles */
-  loadVideo();
-});
+  loadVideo(true);
+}
 document.getElementById("btn-play").onclick=()=>loadVideo(true);
 document.getElementById("btn-dl").onclick=downloadVideo;
 document.getElementById("btn-server").onclick=()=>{ setServerMode(!state.serverMode); loadVideo(true); };
@@ -699,16 +711,12 @@ document.getElementById("btn-fs").onclick=()=>{
 };
 document.getElementById("btn-dock").onclick=()=>document.getElementById("dock").classList.toggle("hidden-dock");
 
-/* ================= INIT : mode serveur par défaut, démarrage quand le backend est prêt ================= */
+/* ================= INIT : pas de vidéo avant le choix des 2 équipes ================= */
 applyPapers();
 ["left","right"].forEach(renderFlag);
 setServerMode(true);
-(async()=>{
-  showWait(true);
-  await waitForBackend();
-  showWait(false);
-  loadVideo(true);
-})();
+loadVideo(); /* affiche l'invite de sélection */
+waitForBackend(); /* réveille l'instance Render en arrière-plan */
 </script>
 </body>
 </html>
