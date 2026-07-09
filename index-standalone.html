@@ -282,14 +282,15 @@
     </div>
   </div>
   <div class="dock-row">
-    <!-- le bol est choisi ALÉATOIREMENT par Minoucha : pas de sélecteur -->
-    <div class="bowl-group" style="display:none">
-      <button class="bowl-btn" data-bowl="left"></button>
-      <button class="bowl-btn active" data-bowl="middle"></button>
-      <button class="bowl-btn" data-bowl="right"></button>
+    <!-- Simulation mode (OFF par défaut) : forcer Minoucha vers un bol précis -->
+    <div class="bowl-group" id="sim-bowls" style="display:none">
+      <button class="bowl-btn" data-bowl="left">⬅️ Left bowl<small>team 1 wins</small></button>
+      <button class="bowl-btn active" data-bowl="middle">🥣 Middle<small>draw</small></button>
+      <button class="bowl-btn" data-bowl="right">Right bowl ➡️<small>team 2 wins</small></button>
     </div>
     <button class="play-btn" id="btn-play">▶ Replay</button>
     <button class="play-btn" id="btn-dl" style="background:linear-gradient(135deg,#9be09b,#3f9d3f);box-shadow:0 6px 22px rgba(63,157,63,.4)" title="Download the displayed video">⬇ Download</button>
+    <button class="play-btn" id="btn-sim" style="background:rgba(255,255,255,.10);color:var(--text);box-shadow:none;border:1px solid var(--glass-border)" title="Simulation mode: force Minoucha to a specific bowl (testing only)">🧪 Simulation: OFF</button>
     <button class="play-btn" id="btn-server" style="display:none" title="Rendu serveur (toujours actif)">🎬 Rendu serveur : ON</button>
   </div>
 </div>
@@ -848,6 +849,22 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 document.querySelectorAll(".team-slot[data-pos]").forEach(s=>s.onclick=()=>openModal(s.dataset.pos));
 
 /* ================= BOL / CONTRÔLES ================= */
+/* ===== Simulation mode (OFF by default) : force le bol, pour tester ===== */
+state.simulation=false;
+function setSimulation(on){
+  state.simulation=on;
+  document.getElementById("sim-bowls").style.display=on?"flex":"none";
+  document.getElementById("btn-sim").textContent="🧪 Simulation: "+(on?"ON":"OFF");
+  if(state.teams.left&&state.teams.right) newPrediction(); /* rejoue selon le mode courant */
+}
+document.getElementById("btn-sim").onclick=()=>setSimulation(!state.simulation);
+document.querySelectorAll("#sim-bowls .bowl-btn").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#sim-bowls .bowl-btn").forEach(x=>x.classList.toggle("active",x===b));
+  state.bowl=b.dataset.bowl;
+  applyPapers();
+  loadVideo(true);
+});
+
 /* Minoucha knows football: the stronger team (better world ranking) always wins.
    Only when rankings are close (within ±5 positions) the result is "random" —
    but deterministic per (teams, month, year), so reloading never changes the verdict. */
@@ -866,6 +883,7 @@ function bowlFor(t1,t2){
 }
 function newPrediction(){
   if(!state.teams.left || !state.teams.right){ loadVideo(); return; }
+  if(state.simulation){ applyPapers(); loadVideo(true); return; } /* bol forcé par les boutons */
   state.bowl = bowlFor(state.teams.left, state.teams.right);
   applyPapers(); /* chaque vidéo a sa propre calibration de feuilles */
   loadVideo(true);
