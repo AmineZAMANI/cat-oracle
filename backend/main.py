@@ -271,7 +271,8 @@ def composite(video: Path, canvas_png: Path, opacity: float, duration: float, ou
         f"[1:v]format=rgba,colorchannelmixer=aa={opacity}[ov];"
         f"[0:v][ov]overlay=0:0,format=yuv420p[v]",
         "-map", "[v]", "-map", "0:a?",
-        "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
+        # ultrafast : ~2x plus rapide sur les petites instances (Render Free = 0.1 vCPU)
+        "-c:v", "libx264", "-crf", "20", "-preset", "ultrafast",
         "-c:a", "copy",
         "-movflags", "+faststart",
         "-shortest",
