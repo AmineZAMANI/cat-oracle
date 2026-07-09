@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🐱 Minoucha — Standalone (100% frontend)</title>
-<!-- OpenCV.js : détection des feuilles blanches directement dans le navigateur -->
-<script async src="https://docs.opencv.org/4.10.0/opencv.js"></script>
+<!-- OpenCV.js : détection des feuilles blanches directement dans le navigateur (jsDelivr : fiable) -->
+<script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js"></script>
 <style>
   :root{
     --glass: rgba(15,15,20,.55);
@@ -301,12 +301,14 @@
 /* ================= CONFIG VIDÉOS =================
    Remplace ces URLs par tes propres fichiers si besoin
    (ex: "videos/left.mp4"). Une vidéo par bol.        */
-/* vidéos servies par la MÊME ORIGINE (dossier videos/ du dépôt) :
-   pas de CORS → OpenCV.js peut lire les frames et l'export fonctionne */
+/* vidéos servies par la MÊME ORIGINE (dossier media/ du dépôt — pas /videos,
+   réservé aux rendus du backend) : pas de CORS → OpenCV.js lit les frames.
+   En local (file://), on pointe vers le site déployé (CORS * activé côté serveur). */
+const MEDIA_BASE = location.protocol==="file:" ? "https://cat-oracle-qx15.onrender.com/" : "";
 const VIDEOS = {
-  left:   "videos/left.mp4",
-  middle: "videos/middle.mp4",
-  right:  "videos/right.mp4"
+  left:   MEDIA_BASE+"media/left.mp4",
+  middle: MEDIA_BASE+"media/middle.mp4",
+  right:  MEDIA_BASE+"media/right.mp4"
 };
 
 /* Coins des feuilles blanches dans la vidéo (% de l'écran) : TL, TR, BR, BL.
