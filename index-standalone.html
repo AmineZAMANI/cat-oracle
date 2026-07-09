@@ -253,7 +253,8 @@
   </div>
   <div class="top-actions">
     <button class="icon-btn" id="btn-dock" title="Afficher/masquer les contrôles">☰</button>
-    <button class="icon-btn" id="btn-fs" title="Plein écran">⛶</button>
+    <button class="icon-btn" id="btn-music" title="Music on/off (Säkkijärven polkka — trad. / Spazzmatica Polka, Kevin MacLeod CC-BY)">🎵</button>
+    <button class="icon-btn" id="btn-fs" title="Fullscreen">⛶</button>
   </div>
 </header>
 
@@ -293,6 +294,10 @@
   </div>
 </div>
 
+<audio id="bgmusic" loop preload="none">
+  <source src="media/polka.ogg" type="audio/ogg">
+  <source src="media/polka.mp3" type="audio/mpeg">
+</audio>
 <div id="loader"><div style="display:flex;flex-direction:column;align-items:center;gap:14px;max-width:86vw">
   <div class="spinner"></div>
   <div id="load-msg" style="font-size:14px;font-weight:600;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.7)"></div>
@@ -678,17 +683,9 @@ video.addEventListener("ended",()=>{ showResult(); });
 /* ================= RÉSULTAT ================= */
 const banner=document.getElementById("banner");
 function showResult(){
+  /* pas de bannière "The cat picked" : seule la feuille gagnante s'illumine */
   const el = document.getElementById("pf-"+state.bowl);
   el.classList.add("winner");
-  if(state.bowl==="middle"){
-    document.getElementById("b-title").textContent = "🤝 Cat's verdict";
-    document.getElementById("b-team").textContent = "DRAW";
-  } else {
-    const t = state.teams[state.bowl];
-    document.getElementById("b-title").textContent = "🏆 The cat picked";
-    document.getElementById("b-team").textContent = t ? t.name : ({left:"the left bowl",right:"the right bowl"})[state.bowl];
-  }
-  banner.classList.add("show");
 }
 function hideBanner(){banner.classList.remove("show");}
 function clearWinner(){document.querySelectorAll(".paper-flag").forEach(p=>p.classList.remove("winner"));}
@@ -878,6 +875,23 @@ document.getElementById("btn-fs").onclick=()=>{
   else document.documentElement.requestFullscreen();
 };
 document.getElementById("btn-dock").onclick=()=>document.getElementById("dock").classList.toggle("hidden-dock");
+
+/* ===== Fun Nordic background music (Säkkijärven polkka) ===== */
+const music=document.getElementById("bgmusic");
+music.volume=0.35;
+let musicOn = localStorage.getItem("musicOff")!=="1";
+function updateMusicBtn(){ document.getElementById("btn-music").textContent = musicOn ? "🎵" : "🔇"; }
+function tryMusic(){ if(musicOn && music.paused) music.play().catch(()=>{}); }
+document.getElementById("btn-music").onclick=(e)=>{
+  e.stopPropagation();
+  musicOn=!musicOn;
+  localStorage.setItem("musicOff", musicOn?"0":"1");
+  if(musicOn) music.play().catch(()=>{}); else music.pause();
+  updateMusicBtn();
+};
+/* l'autoplay exige un geste utilisateur : premier clic/tap n'importe où */
+document.addEventListener("pointerdown",tryMusic);
+updateMusicBtn();
 
 /* ================= INIT : pas de vidéo avant le choix des 2 équipes ================= */
 applyPapers();
