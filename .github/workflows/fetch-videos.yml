@@ -14,6 +14,9 @@ jobs:
           curl -fL -o media/left.mp4   "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225827_6109b307-f32d-488b-8dac-44f968be8809.mp4"
           curl -fL -o media/middle.mp4 "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_234502_ec20af48-a233-4b1a-aa62-cb1d02538a31.mp4"
           curl -fL -o media/right.mp4  "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225833_040a9d9e-3249-4544-ade6-51153251cc9d.mp4"
+          # musique de fond : Säkkijärven polkka (trad. finlandaise) + fallback mp3 (Kevin MacLeod, CC-BY)
+          curl -fL -o media/polka.ogg "https://upload.wikimedia.org/wikipedia/commons/a/a4/Anonimo_S%C3%A4kkij%C3%A4rven_polkka.ogg"
+          curl -fL -o media/polka.mp3 "https://upload.wikimedia.org/wikipedia/commons/e/ea/Spazzmatica_Polka_%28ISRC_USUAN1100721%29.mp3"
           ls -la media/
       - name: Commit videos
         run: |
