@@ -301,10 +301,12 @@
 /* ================= CONFIG VIDÉOS =================
    Remplace ces URLs par tes propres fichiers si besoin
    (ex: "videos/left.mp4"). Une vidéo par bol.        */
+/* vidéos servies par la MÊME ORIGINE (dossier videos/ du dépôt) :
+   pas de CORS → OpenCV.js peut lire les frames et l'export fonctionne */
 const VIDEOS = {
-  left:   "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225827_6109b307-f32d-488b-8dac-44f968be8809.mp4",
-  middle: "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_234502_ec20af48-a233-4b1a-aa62-cb1d02538a31.mp4",
-  right:  "https://d8j0ntlcm91z4.cloudfront.net/user_3G5yYP2hJaO4u32OdSPDubLRbmN/hf_20260708_225833_040a9d9e-3249-4544-ade6-51153251cc9d.mp4"
+  left:   "videos/left.mp4",
+  middle: "videos/middle.mp4",
+  right:  "videos/right.mp4"
 };
 
 /* Coins des feuilles blanches dans la vidéo (% de l'écran) : TL, TR, BR, BL.
