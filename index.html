@@ -212,9 +212,8 @@
   <div id="veil"></div>
   <!-- Overlays imprimés sur les feuilles blanches de la vidéo -->
   <div class="paper-flag" id="pf-left"  data-pos="left"></div>
-  <div class="paper-flag" id="pf-middle" data-pos="middle">
-    <div class="print draw"><span class="dw">DRAW</span></div>
-  </div>
+  <!-- feuille du milieu : laissée blanche (le verdict DRAW est affiché par la bannière) -->
+  <div class="paper-flag" id="pf-middle" data-pos="middle"></div>
   <div class="paper-flag" id="pf-right" data-pos="right"></div>
 </div>
 
@@ -414,10 +413,13 @@ async function renderServer(){
   try{
     const cfg=quadCfg[state.bowl];
     /* slot => le backend détecte lui-même les feuilles blanches ; quad = fallback.
-       Le DRAW est entièrement généré côté backend (encre réaliste sur la vraie feuille). */
-    const overlays=[{kind:"draw",slot:"middle",quad:cfg.middle}];
+       Feuille du milieu : laissée blanche. */
+    const overlays=[];
     if(state.teams.left)  overlays.push({kind:"flag",image:await rasterize(state.teams.left.flag), slot:"left", quad:cfg.left});
     if(state.teams.right) overlays.push({kind:"flag",image:await rasterize(state.teams.right.flag),slot:"right",quad:cfg.right});
+    if(!overlays.length){ /* aucune équipe choisie : vidéo brute */
+      video.src=VIDEOS[state.bowl]; video.load(); video.play().catch(()=>{}); return;
+    }
     const r=await fetch(BACKEND+"/api/render",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({video_url:VIDEOS[state.bowl],overlays,opacity:1.0,blur_sigma:0.5,auto_detect:true})
